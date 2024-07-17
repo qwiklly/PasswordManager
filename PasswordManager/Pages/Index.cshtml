@@ -1,0 +1,133 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Записи</h1>
+
+<div class="mb-3">
+    <input type="text" class="form-control" id="searchInput" placeholder="Поиск по email или названию сайта" onkeyup="searchTable()">
+</div>
+
+<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addNoteModal">
+    Добавить запись
+</button>
+
+<table class="table" id="notesTable">
+    <thead>
+        <tr>
+            <th>Наименование</th>
+            <th>Пароль</th>
+            <th>Дата</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var note in Model.Notes)
+        {
+            <tr>
+                <td>@Html.Raw(System.Net.WebUtility.HtmlEncode(note.WebsiteName))</td>
+                <td>
+                    <span class="masked-password" onclick="togglePasswordVisibility(this)" data-password="@note.Password">********</span>
+                </td>
+                <td>@note.DateTime</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="modal fade" id="addNoteModal" tabindex="-1" aria-labelledby="addNoteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addNoteModalLabel">Добавить новую запись</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addNoteForm" method="post">
+                    <div class="mb-3">
+                        <label for="WebsiteName" class="form-label">Наименование</label>
+                        <input type="text" class="form-control" id="WebsiteName" name="WebsiteName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="Password" class="form-label">Пароль</label>
+                        <input type="text" class="form-control" id="Password" name="Password" required minlength="8">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Тип</label><br>
+                        <input type="radio" id="typeSite" name="Type" value="Сайт" checked>
+                        <label for="typeSite">Сайт</label>
+                        <input type="radio" id="typeEmail" name="Type" value="Электронная почта">
+                        <label for="typeEmail">Электронная почта</label>
+                    </div>
+                    <input type="hidden" id="DateTime" name="DateTime" value="@DateTime.Now">
+                    <div id="validationMessage" class="text-danger"></div>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function togglePasswordVisibility(element) {
+            if (element.innerText === '********') {
+                element.innerText = element.getAttribute('data-password');
+            } else {
+                element.innerText = '********';
+            }
+        }
+
+        function searchTable() {
+            var input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("searchInput");
+            filter = input.value.toLowerCase();
+            table = document.getElementById("notesTable");
+            tr = table.getElementsByTagName("tr");
+
+            for (i = 1; i < tr.length; i++) {
+                tr[i].style.display = "none";
+                td = tr[i].getElementsByTagName("td");
+                for (var j = 0; j < td.length; j++) {
+                    if (td[j]) {
+                        txtValue = td[j].textContent || td[j].innerText;
+                        if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                            tr[i].style.display = "";
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        document.getElementById('addNoteForm').addEventListener('submit', function (event) {
+            var websiteName = document.getElementById('WebsiteName').value;
+            var password = document.getElementById('Password').value;
+            var validationMessage = document.getElementById('validationMessage');
+
+            // Reset validation message
+            validationMessage.innerHTML = '';
+
+            // Email validation for type Email
+            if (document.getElementById('typeEmail').checked && !validateEmail(websiteName)) {
+                validationMessage.innerHTML = 'Пожалуйста, введите корректный адрес электронной почты.';
+                event.preventDefault();
+                return;
+            }
+
+            // Password validation
+            if (password.length < 8) {
+                validationMessage.innerHTML = 'Пароль должен содержать минимум 8 символов.';
+                event.preventDefault();
+                return;
+            }
+        });
+
+        function validateEmail(email) {
+            var re = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+            return re.test(email);
+        }
+    </script>
+}

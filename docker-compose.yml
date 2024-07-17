@@ -1,0 +1,32 @@
+version: '3.4'
+
+networks:
+    passwordmanager:
+
+services:
+    demoappdb:
+        container_name: app-db
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        ports:
+            - 8002:1433
+        environment:
+            - ACCEPT_EULA=Y
+            - SA_PASSWORD=password@12345#
+        networks:
+            - passwordmanager
+    passwordmanager:
+        container_name: password-manager
+        image: ${DOCKER_REGISTRY-}passwordmanager
+        build:
+            context: .
+            dockerfile: PasswordManager/Dockerfile
+        ports:
+            - 8001:80
+        depends_on:
+            - demoappdb
+        environment:
+            - DB_HOST=demoappdb
+            - DB_NAME=PasswordManager
+            - DB_SA_PASSWORD=password@12345#
+        networks:
+            - passwordmanager
